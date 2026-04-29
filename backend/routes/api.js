@@ -39,6 +39,6 @@ router.get('/dashboard/gr/:lifnr', grController);
 router.get('/finance/invoice/:lifnr', invoiceController);
 router.get('/finance/payaging/:lifnr', payAgingController);
 router.get('/finance/cdmemo/:lifnr', cdMemoController);
-router.get('/finance/invoice-pdf/:lifnr', invoicePdfController);
+router.get('/finance/invoice-pdf/:lifnr/:belnr', invoicePdfController);
 
 module.exports = router;

@@ -133,7 +133,7 @@ type FinanceTab = 'invoice' | 'payaging' | 'cdmemo';
                   <td>{{ formatDate(r.Bldat) }}</td>
                   <td>{{ formatDate(r.Budat) }}</td>
                   <td>
-                    <button class="btn btn-outline-danger" style="padding:4px 8px;font-size:11px;" (click)="downloadPDF()">
+                    <button class="btn btn-outline-danger" style="padding:4px 8px;font-size:11px;" (click)="downloadPDF(r.Belnr)">
                       <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                       </svg>
@@ -288,15 +288,20 @@ export class FinanceComponent implements OnInit {
 
   switchTab(tab: FinanceTab): void { this.activeTab = tab; }
 
-  downloadPDF(): void {
+  downloadPDF(belnr?: string): void {
+    const targetBelnr = belnr || (this.invoiceData.length > 0 ? this.invoiceData[0].Belnr : null);
+    if (!targetBelnr) {
+      this.pdfError = 'Please select a valid invoice to download its PDF.';
+      return;
+    }
     this.pdfLoading = true; this.pdfError = '';
-    this.api.getBlob(`finance/invoice-pdf/${this.lifnr}`).subscribe({
+    this.api.getBlob(`finance/invoice-pdf/${this.lifnr}/${targetBelnr}`).subscribe({
       next: (blob) => {
         this.pdfLoading = false;
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `invoice_${this.lifnr}.pdf`;
+        a.download = `invoice_${this.lifnr}_${targetBelnr}.pdf`;
         a.click();
         // Also open in new tab for preview
         window.open(url, '_blank');

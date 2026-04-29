@@ -87,8 +87,15 @@ const odataGet = (entityPath, params = {}) => {
  * @param {string} entityPath  e.g. "Z_VENDORINVOICE_DSSet(Lifnr='...')/$value"
  * @returns {Promise<import('axios').AxiosResponse>}
  */
-const odataGetStream = (entityPath) => {
-  return odataClient.get(entityPath, {
+const odataGetStream = (entityPath, params = {}) => {
+  // Clean entityPath to remove leading slash
+  const cleanPath = entityPath.startsWith('/') ? entityPath.substring(1) : entityPath;
+
+  return odataClient.get(cleanPath, {
+    params: {
+      'sap-client': '100',
+      ...params
+    },
     responseType: 'arraybuffer',
     headers: { Accept: 'application/pdf' }
   });

@@ -41,9 +41,9 @@ const cdMemoController = async (req, res) => {
 };
 
 const invoicePdfController = async (req, res) => {
-  const { lifnr } = req.params;
+  const { lifnr, belnr } = req.params;
   try {
-    const pdfBuffer = await getInvoicePDF(lifnr);
+    const pdfBuffer = await getInvoicePDF(lifnr, belnr);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="invoice_${lifnr}.pdf"`);
     res.setHeader('Content-Length', pdfBuffer.length);

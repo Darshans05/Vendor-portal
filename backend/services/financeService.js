@@ -10,7 +10,7 @@
  *   Z_VENDORINVOICE_DSSet(Lifnr='0000100034')/$value   ← PDF stream
  */
 
-const { odataGet, odataGetStream, extractResults } = require('../utils/odataClient');
+const { odataGet, odataGetStream, extractResults, extractSingle } = require('../utils/odataClient');
 const { padLifnr } = require('./profileService');
 
 /**
@@ -67,18 +67,31 @@ const getCDMemo = async (lifnr) => {
  * @param {string} lifnr  Vendor ID
  * @returns {Buffer}      PDF binary data
  */
-const getInvoicePDF = async (lifnr) => {
+const getInvoicePDF = async (lifnr, belnr) => {
   try {
     const paddedLifnr = padLifnr(lifnr);
-    // Try OData media link first
-    const entityPath = `Z_VENDORINVOICE_DSSet(Lifnr='${paddedLifnr}')/$value`;
-    const response = await odataGetStream(entityPath);
+    try {
+      // 1st Attempt: Padded LIFNR (SAP Standard)
+      const entityPath = `Z_VENDORPDF_DSSet(Belnr='${belnr}',Lifnr='${paddedLifnr}')`;
+      const response = await odataGet(entityPath);
+      const data = extractSingle(response);
 
-    if (!response.data || response.data.byteLength === 0) {
-      throw new Error('Empty PDF response from SAP');
+      if (!data || !data.XPdf) {
+        throw new Error('Empty PDF response from SAP');
+      }
+      return Buffer.from(data.XPdf, 'base64');
+    } catch (err) {
+      console.warn(`[PDF Warning] Padded fetch failed for ${lifnr}, retrying with raw format...`);
+      // 2nd Attempt: Raw LIFNR (Gateway Fallback)
+      const entityPathFallback = `Z_VENDORPDF_DSSet(Belnr='${belnr}',Lifnr='${lifnr}')`;
+      const responseFallback = await odataGet(entityPathFallback);
+      const dataFallback = extractSingle(responseFallback);
+
+      if (!dataFallback || !dataFallback.XPdf) {
+        throw new Error('Empty PDF response from SAP');
+      }
+      return Buffer.from(dataFallback.XPdf, 'base64');
     }
-
-    return Buffer.from(response.data);
   } catch (error) {
     throw new Error(error.sapMessage || error.message || 'Failed to fetch invoice PDF');
   }
